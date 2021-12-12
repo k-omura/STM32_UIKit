@@ -166,6 +166,12 @@ typedef struct {
 	int16_t leftSideBearing;
 } ttHMetric_t;
 
+typedef struct {
+	uint16_t p1;
+	uint16_t p2;
+	uint8_t up;
+} ttWindIntersect_t;
+
 //Assuming "public"
 uint8_t truetype_setTtfFile(uint8_t);
 void truetype_setCharacterSpacing(int16_t, uint8_t);
@@ -173,7 +179,8 @@ void truetype_setCharacterSize(uint16_t);
 void truetype_setTextBoundary(uint16_t, uint16_t, uint16_t);
 void truetype_setTextColor(uint8_t, uint8_t, uint8_t);
 void truetype_setTextRotation(uint16_t);
-void truetype_textDraw(int16_t, int16_t, const wchar_t _character[]);
+void truetype_textDrawL(int32_t, int32_t, wchar_t _character[]);
+void truetype_textDraw(int32_t, int32_t, char _character[]);
 /*
 uint16_t getStringWidth(const wchar_t _character[]);
 */
@@ -209,18 +216,19 @@ ttHMetric_t getHMetric(uint16_t);
 uint8_t readKern();
 int16_t getKerning(uint16_t, uint16_t);
 //glyf
-void generateOutline(int16_t, int16_t, uint16_t);
+void generateOutline(int32_t, int32_t, uint16_t);
 void freePointsAll();
-uint8_t isInside(int16_t, int16_t);
+int16_t isInside(uint16_t, uint16_t);
+void fillGlyph(uint16_t, uint16_t, uint16_t);
 uint8_t readGlyph(uint16_t, uint8_t);
 void freeGlyph();
-void addPoint(int16_t, int16_t);
+void addPoint(uint16_t, uint16_t);
 void freePoints();
 void addBeginPoint(uint16_t);
 void freeBeginPoints();
 void addEndPoint(uint16_t);
 void freeEndPoints();
-int32_t isLeft(ttCoordinate_t, ttCoordinate_t, ttCoordinate_t);
-void addLine(int16_t, int16_t, int16_t, int16_t);
+void addLine(uint16_t, uint16_t, uint16_t, uint16_t);
+int32_t isLeft(ttCoordinate_t *_p0, ttCoordinate_t *_p1, ttCoordinate_t *_point);
 
 #endif /* INC_BITAMAP_TRUETYPE_H_ */
