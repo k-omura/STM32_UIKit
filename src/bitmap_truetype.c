@@ -42,6 +42,7 @@ uint16_t *beginPoints;
 uint16_t numBeginPoints;
 uint16_t *endPoints;
 uint16_t numEndPoints;
+ttWindIntersect_t *pointsToFill;
 
 struct bitmap_truetype_fs_t bitmap_truetype_fs;
 struct bitmap_truetype_param_t bitmap_truetype_param = {20, 1, 0, 10, 280, 320, 280, 320, 280, 0, 0x00, 0xff};
@@ -111,7 +112,19 @@ void truetype_setTextRotation(uint16_t _rotation){
 	bitmap_truetype_param.stringRotation = _rotation;
 }
 
-void truetype_textDraw(int16_t _x, int16_t _y, const wchar_t _character[]){
+void truetype_textDraw(int32_t _x, int32_t _y, char _character[]){
+	uint16_t length = 0;
+	while(_character[length] != '\0'){
+		length++;
+	}
+	wchar_t *wcharacter = (wchar_t *)calloc(sizeof(wchar_t), length + 1);
+	for(uint16_t i = 0; i < length; i++){
+		wcharacter[i] = _character[i];
+	}
+	truetype_textDrawL(_x, _y, wcharacter);
+}
+
+void truetype_textDrawL(int32_t _x, int32_t _y, wchar_t _character[]){
 	uint8_t c = 0;
 	uint16_t prev_code = 0;
 
@@ -166,14 +179,7 @@ void truetype_textDraw(int16_t _x, int16_t _y, const wchar_t _character[]){
 
 			//fill charctor
 			if(bitmap_truetype_param.fillInside){
-				for (uint16_t pixel_y = 0; pixel_y < bitmap_truetype_param.characterSize; pixel_y++) {
-					for (uint16_t pixel_x = 0; pixel_x < width; pixel_x++) {
-						//want to fill faster...
-						if (isInside(hMetric.leftSideBearing + _x + pixel_x, _y + pixel_y)) {
-							bitmap_pixel(hMetric.leftSideBearing + _x + pixel_x, _y + pixel_y, bitmap_truetype_param.colorInside);
-						}
-					}
-				}
+				fillGlyph(hMetric.leftSideBearing + _x, _y, width);
 			}
 		}
 		freePointsAll();
@@ -453,7 +459,7 @@ int16_t getKerning(uint16_t _left_glyph, uint16_t _right_glyph){
 	return result;
 }
 
-void generateOutline(int16_t _x, int16_t _y, uint16_t _width){
+void generateOutline(int32_t _x, int32_t _y, uint16_t _width){
 	points = NULL;
 	numPoints = 0;
 	numBeginPoints = 0;
@@ -530,9 +536,9 @@ void generateOutline(int16_t _x, int16_t _y, uint16_t _width){
 						y1 = (int16_t)((1 - t) * (1 - t) * (1 - t) * pointsOfCurve[0].y + 3 * (1 - t) * (1 - t) * t * pointsOfCurve[1].y + 3 * (1 - t) * t * t * pointsOfCurve[2].y + t * t * t * pointsOfCurve[3].y);
 
 						addLine(map(x0, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-									map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
-									map(x1, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-									map(y1, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
+								map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
+								map(x1, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
+								map(y1, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
 						x0 = x1;
 						y0 = y1;
 					}
@@ -546,9 +552,9 @@ void generateOutline(int16_t _x, int16_t _y, uint16_t _width){
 						y1 = (int16_t)((1 - t) * (1 - t) * pointsOfCurve[0].y + 2 * t * (1 - t) * pointsOfCurve[1].y + t * t * pointsOfCurve[2].y);
 
 						addLine(map(x0, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-									map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
-									map(x1, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-									map(y1, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
+								map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
+								map(x1, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
+								map(y1, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
 						x0 = x1;
 						y0 = y1;
 					}
@@ -558,9 +564,9 @@ void generateOutline(int16_t _x, int16_t _y, uint16_t _width){
 					degree = 1;
 				case 1: //straight line
 					addLine(map(pointsOfCurve[0].x, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-								map(pointsOfCurve[0].y, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
-								map(pointsOfCurve[1].x, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
-								map(pointsOfCurve[1].y, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
+							map(pointsOfCurve[0].y, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
+							map(pointsOfCurve[1].x, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
+							map(pointsOfCurve[1].y, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y));
 					break;
 			}
 
@@ -578,7 +584,7 @@ void freePointsAll(){
 	freeEndPoints();
 }
 
-uint8_t isInside(int16_t _x, int16_t _y){
+int16_t isInside(uint16_t _x, uint16_t _y){
 	int16_t windingNumber = 0;
 	uint16_t bpCounter = 0, epCounter = 0;
 	ttCoordinate_t point = {_x, _y};
@@ -598,20 +604,96 @@ uint8_t isInside(int16_t _x, int16_t _y){
 
 		if (point1.y <= point.y) {
 			if (point2.y > point.y) {
-				if (isLeft(point1, point2, point) > 0) {
+				if (isLeft(&point1, &point2, &point) > 0) {
 					windingNumber++;
 				}
 			}
 		} else {
 			// start y > point.y (no test needed)
 			if (point2.y <= point.y) {
-				if (isLeft(point1, point2, point) < 0) {
+				if (isLeft(&point1, &point2, &point) < 0) {
 					windingNumber--;
 				}
 			}
 		}
 	}
+
 	return windingNumber;
+}
+
+void fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
+	for(uint16_t y = _y_min; y < (_y_min + bitmap_truetype_param.characterSize); y++){
+		ttCoordinate_t point1, point2;
+		ttCoordinate_t point;
+		point.y = y;
+
+		uint16_t intersectPointsNum = 0;
+		uint16_t bpCounter = 0;
+		uint16_t epCounter = 0;
+	    uint16_t p2Num = 0;
+
+		for (uint16_t i = 0; i < numPoints; i++) {
+			point1 = points[i];
+			// Wrap?
+			if (i == endPoints[epCounter]) {
+				p2Num = beginPoints[bpCounter];
+				epCounter++;
+				bpCounter++;
+			} else {
+				p2Num = i + 1;
+			}
+			point2 = points[p2Num];
+
+			if (point1.y <= y) {
+				if (point2.y > y) {
+					//Have a valid up intersect
+					intersectPointsNum++;
+					pointsToFill = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					pointsToFill[intersectPointsNum - 1].p1 = i;
+					pointsToFill[intersectPointsNum - 1].p2 = p2Num;
+					pointsToFill[intersectPointsNum - 1].up = 1;
+				}
+			} else {
+				// start y > point.y (no test needed)
+				if (point2.y <= y) {
+					//Have a valid down intersect
+					intersectPointsNum++;
+					pointsToFill = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					pointsToFill[intersectPointsNum - 1].p1 = i;
+					pointsToFill[intersectPointsNum - 1].p2 = p2Num;
+					pointsToFill[intersectPointsNum - 1].up = 0;
+				}
+			}
+		}
+
+		int16_t windingNumber = 0;
+		for(uint16_t x = _x_min; x < (_x_min + _width); x++){
+			windingNumber = 0;
+			point.x = x;
+
+			for (uint16_t i = 0; i < intersectPointsNum; i++) {
+				point1 = points[pointsToFill[i].p1];
+				point2 = points[pointsToFill[i].p2];
+
+				if(pointsToFill[i].up == 1){
+					if (isLeft(&point1, &point2, &point) > 0) {
+						windingNumber++;
+					}
+				}else{
+					if (isLeft(&point1, &point2, &point) < 0) {
+						windingNumber--;
+					}
+				}
+			}
+
+			if(windingNumber != 0){
+				bitmap_pixel(x, y, bitmap_truetype_param.colorInside);
+			}
+		}
+
+		free(pointsToFill);
+		pointsToFill = NULL;
+	}
 }
 
 uint8_t readGlyph(uint16_t _code, uint8_t _justSize){
@@ -665,6 +747,7 @@ uint32_t getGlyphOffset(uint16_t _index){
 
 	return 0;
 }
+
 uint16_t codeToGlyphId(uint16_t _code){
 	uint16_t start, end, idRangeOffset;
 	int16_t idDelta;
@@ -817,7 +900,7 @@ uint8_t readCompoundGlyph(){
 	return 1;
 }
 
-void addLine(int16_t _x0, int16_t _y0, int16_t _x1, int16_t _y1){
+void addLine(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1){
 	if (numPoints == 0) {
 		addPoint(_x0, _y0);
 		addBeginPoint(0);
@@ -832,26 +915,22 @@ void freeGlyph(){
 	free(glyph.endPtsOfContours);
 	glyph.numberOfPoints = 0;
 }
-
-void addPoint(int16_t _x, int16_t _y){
+void addPoint(uint16_t _x, uint16_t _y){
 	numPoints++;
 	points = (ttCoordinate_t *)realloc(points, sizeof(ttCoordinate_t) * numPoints);
 	points[(numPoints - 1)].x = _x;
 	points[(numPoints - 1)].y = _y;
 }
-
 void freePoints(){
 	free(points);
 	points = NULL;
 	numPoints = 0;
 }
-
 void addBeginPoint(uint16_t _bp){
 	numBeginPoints++;
 	beginPoints = (uint16_t *)realloc(beginPoints, sizeof(uint16_t) * numBeginPoints);
 	beginPoints[(numBeginPoints - 1)] = _bp;
 }
-
 void freeBeginPoints(){
 	free(beginPoints);
 	beginPoints = NULL;
@@ -868,8 +947,8 @@ void freeEndPoints(){
 	numEndPoints = 0;
 }
 
-int32_t isLeft(ttCoordinate_t _p0, ttCoordinate_t _p1, ttCoordinate_t _point) {
-	return ((_p1.x - _p0.x) * (_point.y - _p0.y) - (_point.x - _p0.x) * (_p1.y - _p0.y));
+int32_t isLeft(ttCoordinate_t *_p0, ttCoordinate_t *_p1, ttCoordinate_t *_point) {
+	return ((_p1->x - _p0->x) * (_point->y - _p0->y) - (_point->x - _p0->x) * (_p1->y - _p0->y));
 }
 
 uint8_t getUInt8t(){
