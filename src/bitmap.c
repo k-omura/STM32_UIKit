@@ -43,6 +43,36 @@ void bitmap_line(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uint8_t
 		return;
 	}
 
+	if(_x0 == _x1){
+		uint16_t y_min, y_max;
+		if(_y0 < _y1){
+			y_min = _y0;
+			y_max = _y1;
+		}else{
+			y_min = _y1;
+			y_max = _y0;
+		}
+		for(uint16_t y = y_min; y <= y_max; y++){
+			bitmap_pixel(_x0, y, _color);
+		}
+		return;
+	}
+
+	if(_y0 == _y1){
+		uint16_t x_min, x_max;
+		if(_x0 < _x1){
+			x_min = _x0;
+			x_max = _x1;
+		}else{
+			x_min = _x1;
+			x_max = _x0;
+		}
+		for(uint16_t x = x_min; x <= x_max; x++){
+			bitmap_pixel(x, _y0, _color);
+		}
+		return;
+	}
+
 	int16_t dx = (_x1 > _x0) ? (_x1 - _x0) : (_x0 - _x1);
 	int16_t dy = (_y1 > _y0) ? (_y1 - _y0) : (_y0 - _y1);
 	int16_t sx, sy, err, e2;
@@ -74,6 +104,7 @@ void bitmap_line(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uint8_t
 			_y0 += sy;
 		}
 	}
+	return;
 }
 
 void bitmap_bezier(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uint16_t _x2, uint16_t _y2, uint8_t _color){
