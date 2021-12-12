@@ -2,7 +2,7 @@
  * touch_2046.c
  *
  *  Created on: Jun 5, 2020
- *      Author: omurakosuke
+ *      Author: k-omura
  */
 
 #include <touch_2046.h>
