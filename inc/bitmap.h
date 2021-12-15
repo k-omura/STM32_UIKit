@@ -36,6 +36,9 @@ void bitmap_bezier(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, u
 void bitmap_rect(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
 void bitmap_fillrect(uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
 
+void bitmap_circle(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
+void bitmap_fillcircle(uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
+
 void bitmap_roundrect(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
 void bitmap_fillroundrect(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t);
 
