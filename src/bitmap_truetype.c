@@ -1,5 +1,5 @@
 /*
- * bitmap.h
+ * bitmap_truetype.h
  *
  *  Created on: Dec. 11, 2021
  *      Author: k-omura
@@ -7,9 +7,6 @@
 
 #include "bitmap_truetype.h"
 
-//----------debug
-#define TERMINAL_LINE_MAX 30
-char string[30];
 //----------
 uint32_t bytesread;
 const int numTablesPos = 4;
@@ -46,6 +43,59 @@ ttWindIntersect_t *pointsToFill;
 
 struct bitmap_truetype_fs_t bitmap_truetype_fs;
 struct bitmap_truetype_param_t bitmap_truetype_param = {20, 1, 0, 10, 280, 320, 280, 320, 280, 0, 0x00, 0xff};
+
+//private struct typedef
+
+//private struct typedef end
+
+//private function prototype
+//Assuming "private"
+uint8_t getUInt8t();
+int16_t getInt16t();
+uint16_t getUInt16t();
+uint32_t getUInt32t();
+int32_t map(int32_t, int32_t, int32_t, int32_t, int32_t);
+//int16_t swap_int16(int16_t);
+//uint16_t swap_uint16(uint16_t);
+//uint32_t swap_uint32(uint32_t);
+
+//basic
+uint8_t readTableDirectory(uint8_t);
+uint32_t calculateCheckSum(uint32_t, uint32_t);
+uint32_t seekToTable(const char *name);
+void readHeadTable();
+void readCoords(char, uint16_t);
+//Glyph
+uint32_t getGlyphOffset(uint16_t);
+uint16_t codeToGlyphId(uint16_t);
+uint8_t readSimpleGlyph(uint8_t);
+uint8_t readCompoundGlyph();
+
+//cmap. maps character codes to glyph indices
+uint8_t readCmapFormat4();
+uint8_t readCmap();
+//hmtx. metric information for the horizontal layout each of the glyphs
+uint8_t readHMetric();
+ttHMetric_t getHMetric(uint16_t);
+//kerning.
+uint8_t readKern();
+int16_t getKerning(uint16_t, uint16_t);
+//glyf
+void generateOutline(int32_t, int32_t, uint16_t);
+void freePointsAll();
+int16_t isInside(uint16_t, uint16_t);
+void fillGlyph(uint16_t, uint16_t, uint16_t);
+uint8_t readGlyph(uint16_t, uint8_t);
+void freeGlyph();
+void addPoint(uint16_t, uint16_t);
+void freePoints();
+void addBeginPoint(uint16_t);
+void freeBeginPoints();
+void addEndPoint(uint16_t);
+void freeEndPoints();
+void addLine(uint16_t, uint16_t, uint16_t, uint16_t);
+int32_t isLeft(ttCoordinate_t *_p0, ttCoordinate_t *_p1, ttCoordinate_t *_point);
+//private function prototype end
 
 //----------
 uint8_t truetype_setTtfFile(uint8_t _checkCheckSum){
@@ -224,6 +274,50 @@ uint8_t readTableDirectory(uint8_t _checkCheckSum){
 		}
 	}
 	return 1;
+}
+
+uint16_t truetype_getStringWidthL(wchar_t _character[]){
+	uint16_t prev_code = 0;
+	uint16_t c = 0;
+	uint16_t output = 0;
+
+	while (_character[c] != '\0') {
+		//space (half-width, full-width)
+		if((_character[c] == ' ') || (_character[c] == L'　')){
+			prev_code = 0;
+			output += bitmap_truetype_param.characterSize / 4;
+			c++;
+			continue;
+		}
+		uint16_t code = codeToGlyphId(_character[c]);
+		readGlyph(code, 1);
+
+		output += bitmap_truetype_param.characterSpace;
+		if(prev_code != 0 && bitmap_truetype_param.kerningOn){
+			int16_t kern = getKerning(prev_code, code); //space between charctor
+			output += (kern * (int16_t)bitmap_truetype_param.characterSize) / (yMax - yMin);
+		}
+		prev_code = code;
+
+		ttHMetric_t hMetric = getHMetric(code);
+		uint16_t width = bitmap_truetype_param.characterSize * (glyph.xMax - glyph.xMin) / (yMax - yMin);
+		output += (hMetric.advanceWidth) ? (hMetric.advanceWidth) : (width);
+		c++;
+	}
+
+	return output;
+}
+
+uint16_t truetype_getStringWidth(char _character[]){
+	uint16_t length = 0;
+	while(_character[length] != '\0'){
+		length++;
+	}
+	wchar_t *wcharacter = (wchar_t *)calloc(sizeof(wchar_t), length + 1);
+	for(uint16_t i = 0; i < length; i++){
+		wcharacter[i] = _character[i];
+	}
+	return truetype_getStringWidthL(wcharacter);
 }
 
 uint32_t calculateCheckSum(uint32_t _offset, uint32_t _length){
