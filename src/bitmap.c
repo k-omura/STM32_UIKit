@@ -144,6 +144,10 @@ void bitmap_fillrect(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uin
 		return;
 	}
 
+	if((_x0 > _x1) || (_y0 > _y1)){
+		return;
+	}
+
 	for(uint16_t x = _x0; x <= _x1; x++){
 		for(uint16_t y = _y0; y <= _y1; y++){
 			bitmap_pixel(x, y, _color);
@@ -151,12 +155,99 @@ void bitmap_fillrect(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uin
 	}
 }
 
+void bitmap_circle(uint16_t _x, uint16_t _y, uint16_t _round, uint16_t _orthant, uint16_t _width, uint8_t _color){
+	for(uint16_t i = 0; i < _width; i++){
+		int32_t f = 1 - _round;
+		uint16_t ddF_x = 1;
+		int32_t ddF_y = -2 * _round;
+		uint16_t x = 0;
+		int32_t y = _round;
+
+		if(_orthant == 0){
+			bitmap_pixel(_x, _y + _round, _color);
+			bitmap_pixel(_x, _y - _round, _color);
+			bitmap_pixel(_x + _round, _y, _color);
+			bitmap_pixel(_x - _round, _y, _color);
+		}
+
+		while (x < y) {
+			if (f >= 0) {
+				y--;
+				ddF_y += 2;
+				f += ddF_y;
+			}
+			x++;
+			ddF_x += 2;
+			f += ddF_x;
+
+			if((_orthant == 0) || (_orthant == 1)){
+				bitmap_pixel(_x + x, _y - y, _color);
+				bitmap_pixel(_x + y, _y - x, _color);
+			}
+			if((_orthant == 0) || (_orthant == 2)){
+				bitmap_pixel(_x - x, _y - y, _color);
+				bitmap_pixel(_x - y, _y - x, _color);
+			}
+			if((_orthant == 0) || (_orthant == 3)){
+				bitmap_pixel(_x - x, _y + y, _color);
+				bitmap_pixel(_x - y, _y + x, _color);
+			}
+			if((_orthant == 0) || (_orthant == 4)){
+				bitmap_pixel(_x + y, _y + x, _color);
+				bitmap_pixel(_x + x, _y + y, _color);
+			}
+		}
+		_round--;
+	}
+}
+
+void bitmap_fillcircle(uint16_t _x, uint16_t _y, uint16_t _round, uint16_t _orthant, uint8_t _color){
+	int32_t f = 1 - _round;
+	uint16_t ddF_x = 1;
+	int32_t ddF_y = -2 * _round;
+	uint16_t x = 0;
+	uint16_t y = _round;
+
+	if(_orthant == 0){
+		for(uint16_t i = 0; i < _round; i++){
+			bitmap_pixel(_x, _y + i, _color);
+			bitmap_pixel(_x, _y - i, _color);
+			bitmap_pixel(_x + i, _y, _color);
+			bitmap_pixel(_x - i, _y, _color);
+		}
+	}
+
+	while (x < y) {
+		if (f >= 0) {
+			y--;
+			ddF_y += 2;
+			f += ddF_y;
+		}
+		x++;
+		ddF_x += 2;
+		f += ddF_x;
+
+		if((_orthant == 0) || (_orthant == 1)){
+			bitmap_line(_x + x, _y - y, _x + x, _y - 1, _color);
+			bitmap_line(_x + y, _y - x, _x + y, _y - 1, _color);
+		}
+		if((_orthant == 0) || (_orthant == 2)){
+			bitmap_line(_x - x, _y - y, _x - x, _y - 1, _color);
+			bitmap_line(_x - y, _y - x, _x - y, _y - 1, _color);
+		}
+		if((_orthant == 0) || (_orthant == 3)){
+			bitmap_line(_x - x, _y + y, _x - x, _y + 1, _color);
+			bitmap_line(_x - y, _y + x, _x - y, _y + 1, _color);
+		}
+		if((_orthant == 0) || (_orthant == 4)){
+			bitmap_line(_x + x, _y + y, _x + x, _y + 1, _color);
+			bitmap_line(_x + y, _y + x, _x + y, _y + 1, _color);
+		}
+	}
+}
+
 void bitmap_roundrect(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uint16_t _round, uint16_t _width, uint8_t _color) {
 	if(bitmap_param.width == 0){
-		return;
-	}
-	if(_round < 5){
-		bitmap_rect(_x0, _y0, _x1, _y1, _width, _color);
 		return;
 	}
 
@@ -173,18 +264,34 @@ void bitmap_roundrect(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, ui
 			bitmap_pixel(x, _y0 + i, _color);
 			bitmap_pixel(x, _y1 - i, _color);
 		}
-
-		bitmap_bezier(_x0 + i, _y0 + _round, _x0 + i, _y0 + i, _x0 + _round, _y0 + i, _color);
-		bitmap_bezier(_x0 + i, _y1 - _round, _x0 + i, _y1 - i, _x0 + _round, _y1 - i, _color);
-		bitmap_bezier(_x1 - _round, _y0 + i, _x1 - i, _y0 + i, _x1 - i, _y0 + _round, _color);
-		bitmap_bezier(_x1 - _round, _y1 - i, _x1 - i, _y1 - i, _x1 - i, _y1 - _round, _color);
 	}
+
+	bitmap_circle(_x1 - _round, _y0 + _round, _round, 1, _width, _color);
+	bitmap_circle(_x0 + _round, _y0 + _round, _round, 2, _width, _color);
+	bitmap_circle(_x0 + _round, _y1 - _round, _round, 3, _width, _color);
+	bitmap_circle(_x1 - _round, _y1 - _round, _round, 4, _width, _color);
 }
 
 void bitmap_fillroundrect(uint16_t _x0, uint16_t _y0, uint16_t _x1, uint16_t _y1, uint16_t _round, uint8_t _color) {
 	if(bitmap_param.width == 0){
 		return;
 	}
+
+	if(((_x1 - _x0) < (2 * _round)) || ((_y1 - _y0) < (2 * _round))){
+		return;
+	}
+
+	bitmap_fillrect(_x0 + _round, _y0 + _round, _x1 - _round, _y1 - _round, _color);
+
+	bitmap_fillrect(_x0, _y0 + _round, _x0 + _round, _y1 - _round, _color);
+	bitmap_fillrect(_x1 - _round, _y0 + _round, _x1, _y1 - _round, _color);
+	bitmap_fillrect(_x0 + _round, _y0, _x1 - _round, _y0 + _round, _color);
+	bitmap_fillrect(_x0 + _round, _y1 - _round, _x1 - _round, _y1, _color);
+
+	bitmap_fillcircle(_x1 - _round, _y0 + _round, _round, 1, _color);
+	bitmap_fillcircle(_x0 + _round, _y0 + _round, _round, 2, _color);
+	bitmap_fillcircle(_x0 + _round, _y1 - _round, _round, 3, _color);
+	bitmap_fillcircle(_x1 - _round, _y1 - _round, _round, 4, _color);
 }
 
 void bitmap_stringBitmap(uint16_t _x, uint16_t _y, const char _character[], uint8_t _size, uint8_t _font, uint8_t _color) {
