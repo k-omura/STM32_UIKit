@@ -1,5 +1,5 @@
 /*
- * bitmap.h
+ * bitmap_truetype.h
  *
  *  Created on: Dec. 11, 2021
  *      Author: k-omura
@@ -181,54 +181,7 @@ void truetype_setTextColor(uint8_t, uint8_t, uint8_t);
 void truetype_setTextRotation(uint16_t);
 void truetype_textDrawL(int32_t, int32_t, wchar_t _character[]);
 void truetype_textDraw(int32_t, int32_t, char _character[]);
-/*
-uint16_t getStringWidth(const wchar_t _character[]);
-*/
-//Assuming "private"
-uint8_t getUInt8t();
-int16_t getInt16t();
-uint16_t getUInt16t();
-uint32_t getUInt32t();
-int32_t map(int32_t, int32_t, int32_t, int32_t, int32_t);
-//int16_t swap_int16(int16_t);
-//uint16_t swap_uint16(uint16_t);
-//uint32_t swap_uint32(uint32_t);
-
-//basic
-uint8_t readTableDirectory(uint8_t);
-uint32_t calculateCheckSum(uint32_t, uint32_t);
-uint32_t seekToTable(const char *name);
-void readHeadTable();
-void readCoords(char, uint16_t);
-//Glyph
-uint32_t getGlyphOffset(uint16_t);
-uint16_t codeToGlyphId(uint16_t);
-uint8_t readSimpleGlyph(uint8_t);
-uint8_t readCompoundGlyph();
-
-//cmap. maps character codes to glyph indices
-uint8_t readCmapFormat4();
-uint8_t readCmap();
-//hmtx. metric information for the horizontal layout each of the glyphs
-uint8_t readHMetric();
-ttHMetric_t getHMetric(uint16_t);
-//kerning.
-uint8_t readKern();
-int16_t getKerning(uint16_t, uint16_t);
-//glyf
-void generateOutline(int32_t, int32_t, uint16_t);
-void freePointsAll();
-int16_t isInside(uint16_t, uint16_t);
-void fillGlyph(uint16_t, uint16_t, uint16_t);
-uint8_t readGlyph(uint16_t, uint8_t);
-void freeGlyph();
-void addPoint(uint16_t, uint16_t);
-void freePoints();
-void addBeginPoint(uint16_t);
-void freeBeginPoints();
-void addEndPoint(uint16_t);
-void freeEndPoints();
-void addLine(uint16_t, uint16_t, uint16_t, uint16_t);
-int32_t isLeft(ttCoordinate_t *_p0, ttCoordinate_t *_p1, ttCoordinate_t *_point);
+uint16_t truetype_getStringWidthL(wchar_t _character[]);
+uint16_t truetype_getStringWidth(char _character[]);
 
 #endif /* INC_BITAMAP_TRUETYPE_H_ */
