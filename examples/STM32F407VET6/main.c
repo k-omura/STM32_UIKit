@@ -26,6 +26,8 @@
 #include <FSMC_ILI9341.h>
 #include <bitmap.h>
 #include <bitmap_truetype.h>
+#include <touch_2046.h>
+#include <stm32uikit.h>
 
 /* USER CODE END Includes */
 
@@ -38,6 +40,11 @@
 /* USER CODE BEGIN PD */
 #define TERMINAL_LINE_MAX 30
 #define COLOR_BACKGROUND 0x00
+
+#define XPT2046_MIN_RAW_X 230
+#define XPT2046_MAX_RAW_X 3900
+#define XPT2046_MIN_RAW_Y 290
+#define XPT2046_MAX_RAW_Y 3870
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -108,7 +115,15 @@ int main(void)
   MX_DMA_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-
+	
+  // Touch init
+  Coordinate_t touch_s3uikit;
+	Touch_calib_t touch_cal;
+	touch_cal.minX = XPT2046_MIN_RAW_X;
+	touch_cal.minY = XPT2046_MIN_RAW_Y;
+	touch_cal.maxX = XPT2046_MAX_RAW_X;
+	touch_cal.maxY = XPT2046_MAX_RAW_Y;
+	
   // LCD init
 	ILI9341_init();
 	ILI9341_setRotation(1);
@@ -169,25 +184,52 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	uint16_t slide_val = 100;
+	uint8_t button_val = 0;
+	uint16_t button_conter = 0;
 	while (1) {
-		for(uint8_t i = 10; i < 100; i++){
-			truetype_setCharacterSize(i);
-			truetype_textDrawL(5, 5, L"ぬ");
-			ILI9341_printBitmap(frameBuffer);
-			bitmap_clear();
+		touch_s3uikit = xpt2046_read(&hspi2, touch_cal);
+		if(touch_s3uikit.z < 100){
+			touch_s3uikit.x = 0;
+			touch_s3uikit.y = 0;
+			touch_s3uikit.z = 0;
 		}
+		sprintf(string, "%3d, %3d, %3d", touch_s3uikit.x, touch_s3uikit.y, touch_s3uikit.z);
+		bitmap_stringBitmap(20, 0, string, 1, 0, 0xff);
 
-		truetype_setCharacterSize(40);
+		stm32uikit_roundProgress(10, 1000 * touch_s3uikit.x / 240);
+		stm32uikit_rectProgress(25, 1000 * touch_s3uikit.y / 320);
+
+		sprintf(string, "%4d", slide_val);
+		bitmap_stringBitmap(40, 50, string, 1, 1, 0xff);
+		stm32uikit_sllideBar(touch_s3uikit, 70, &slide_val);
+
+		button_val = stm32uikit_roundButton(touch_s3uikit, 100, button_val);
+		if(button_val == 2){
+			button_conter++;
+		}
+		sprintf(string, "Pushed:%5d", button_conter);
+		bitmap_stringBitmap(40, 140, string, 1, 1, 0xff);
+		
+		/*
+		//Truetype count test
 		for(uint8_t i = 1; i <= 100; i++){
 			sprintf(string, "%03d", i);
-			truetype_textDraw(5, 5, string);
-			ILI9341_printBitmap(frameBuffer);
-			bitmap_clear();
+			truetype_textDraw(80, 5, string);
+
+			bitmap_roundrect(10, 50, 230, 60, 5, 1, 0b1001010);
+			bitmap_fillroundrect(11, 51, 229, 59, 4, 0b0100101);
+			bitmap_fillroundrect(11, 51, (19 + ((229 - 19) * i / 100)), 59, 4, 0b0000111);
+
 		}
+		*/
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		ILI9341_printBitmap(frameBuffer);
+		bitmap_clear();
+		//HAL_Delay(10);
 	}
   /* USER CODE END 3 */
 }
