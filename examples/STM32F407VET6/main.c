@@ -63,6 +63,8 @@ SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
 uint8_t frameBuffer[ILI9341_PIXEL_COUNT] = {0};
+
+uint8_t touch_it = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,7 +80,13 @@ static void MX_DMA_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	switch (GPIO_Pin) {
+	case GPIO_PIN_5:
+		touch_it++;
+		break;
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -115,7 +123,7 @@ int main(void)
   MX_DMA_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-	
+
   // Touch init
   Coordinate_t touch_s3uikit;
 	Touch_calib_t touch_cal;
@@ -123,7 +131,7 @@ int main(void)
 	touch_cal.minY = XPT2046_MIN_RAW_Y;
 	touch_cal.maxX = XPT2046_MAX_RAW_X;
 	touch_cal.maxY = XPT2046_MAX_RAW_Y;
-	
+
   // LCD init
 	ILI9341_init();
 	ILI9341_setRotation(1);
@@ -132,17 +140,6 @@ int main(void)
 	char string[30];
 	bitmap_setparam(ILI9341_WIDTH, ILI9341_HEIGHT, COLOR_BACKGROUND, frameBuffer);
 	bitmap_clear();
-
-	//color test
-	for (uint16_t i = 0; i < 256; i++) {
-		bitmap_fillrect(15 * (i % 16), ((uint16_t) (i / 16) * 15), 15 * (i % 16) + 14, ((uint16_t) (i / 16) * 15) + 14, i);
-	}
-	sprintf(string, "8bit");
-	bitmap_stringBitmap(72, 260, string, 3, 1, 0xff);
-
-	ILI9341_printBitmap(frameBuffer);
-	bitmap_clear();
-	HAL_Delay(2000);
 
 	//----------read SD file
 	//SD FatFs init
@@ -156,11 +153,14 @@ int main(void)
 	bitmap_terminal(string, 0, 0xff, TERMINAL_LINE_MAX);
 	ILI9341_printBitmap(frameBuffer);
 
+	//alex.ttf
+	//hirag.ttf
 	if(f_open(&bitmap_truetype_fs.File, "/fonts/hirag.ttf", FA_OPEN_EXISTING | FA_READ) != FR_OK){
 		while(1);
 	}
 	bitmap_terminal("File open: Successfully", 0, 0xff, TERMINAL_LINE_MAX);
 	ILI9341_printBitmap(frameBuffer);
+	HAL_Delay(1000);
 
 	//----------Truetype init
 	uint8_t res = truetype_setTtfFile(0);
@@ -174,19 +174,31 @@ int main(void)
 	truetype_setTextColor(0xff, 0xff, 1);
 	truetype_setTextRotation(0);
 
-	truetype_textDrawL(10, 240, L"ABCあいう");
-	truetype_textDrawL(10, 280, L"お披露目");
+	//color test
+	for (uint16_t i = 0; i < 256; i++) {
+		bitmap_fillrect(15 * (i % 16), ((uint16_t) (i / 16) * 15), 15 * (i % 16) + 14, ((uint16_t) (i / 16) * 15) + 14, i);
+	}
+	truetype_textDraw(20, 260, "STM32 UIKit");
+	//truetype_textDraw(10, 240, "QuickBrownFox");
+	//truetype_textDrawL(10, 280, L"ABCあいう");
+	//bitmap_stringBitmap(72, 260, "8bit", 3, 1, 0xff);
+
 	ILI9341_printBitmap(frameBuffer);
 	bitmap_clear();
-	HAL_Delay(1000);
+	HAL_Delay(2000);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	uint16_t slide_val = 100;
-	uint8_t button_val = 0;
-	uint16_t button_conter = 0;
+
+	uint8_t switch_val1 = 0;
+	uint8_t button_val1 = 0;
+	uint8_t button_val2 = 0;
+	int16_t button_conter1 = 0;
+	int16_t button_conter2 = 0;
+
 	while (1) {
 		touch_s3uikit = xpt2046_read(&hspi2, touch_cal);
 		if(touch_s3uikit.z < 100){
@@ -194,25 +206,45 @@ int main(void)
 			touch_s3uikit.y = 0;
 			touch_s3uikit.z = 0;
 		}
-		sprintf(string, "%3d, %3d, %3d", touch_s3uikit.x, touch_s3uikit.y, touch_s3uikit.z);
-		bitmap_stringBitmap(20, 0, string, 1, 0, 0xff);
 
-		stm32uikit_roundProgress(10, 1000 * touch_s3uikit.x / 240);
-		stm32uikit_rectProgress(25, 1000 * touch_s3uikit.y / 320);
+		//bar
+		bitmap_stringBitmap(10, 10, "x", 1, 1, 0xff);
+		bitmap_stringBitmap(10, 20, "y", 1, 1, 0xff);
+		stm32uikit_roundProgress(20, 10, 210, 1000 * touch_s3uikit.x / 240);
+		stm32uikit_rectProgress(20, 20, 210, 1000 * touch_s3uikit.y / 320);
 
+		//slide bar
+		stm32uikit_sllideBar(touch_s3uikit, 10, 70, 190, &slide_val);
 		sprintf(string, "%4d", slide_val);
-		bitmap_stringBitmap(40, 50, string, 1, 1, 0xff);
-		stm32uikit_sllideBar(touch_s3uikit, 70, &slide_val);
+		bitmap_stringBitmap(205, 70, string, 1, 1, 0xff);
 
-		button_val = stm32uikit_roundButton(touch_s3uikit, 100, button_val);
-		if(button_val == 2){
-			button_conter++;
+		//switch
+		stm32uikit_switch(touch_s3uikit, 180, 250, &switch_val1);
+
+		//button
+		stm32uikit_roundButton(touch_s3uikit, 10, 280, 105, &button_val1);
+		if(button_val1 == 2){
+			if(switch_val1){
+				button_conter1++;
+			}else{
+				button_conter1--;
+			}
 		}
-		sprintf(string, "Pushed:%5d", button_conter);
-		bitmap_stringBitmap(40, 140, string, 1, 1, 0xff);
-		
+		sprintf(string, "%5d", button_conter1);
+		bitmap_stringBitmap(15, 288, string, 2, 1, 0xff);
+		stm32uikit_roundButton(touch_s3uikit, 120, 280, 105, &button_val2);
+		if(button_val2 == 2){
+			if(switch_val1){
+				button_conter2++;
+			}else{
+				button_conter2--;
+			}
+		}
+		sprintf(string, "%5d", button_conter2);
+		bitmap_stringBitmap(135, 288, string, 2, 1, 0xff);
+
 		/*
-		//Truetype count test
+		//Truetype countup test
 		for(uint8_t i = 1; i <= 100; i++){
 			sprintf(string, "%03d", i);
 			truetype_textDraw(80, 5, string);
