@@ -50,7 +50,7 @@ void stm32uikit_roundProgress(uint16_t _x0, uint16_t _y0, uint16_t _width, uint1
 	uint16_t round = comp_progress.height / 2;
 	bitmap_roundrect(_x0, _y0, x1, y1, round, 1, comp_progress.out);
 	bitmap_fillroundrect(_x0 + 1, _y0 + 1, x1 - 1, y1 - 1, round - 1, comp_progress.in);
-	bitmap_fillroundrect(_x0 + 1, _y0 + 1, (_x0 + comp_progress.height - 1 + ((_width - 2 - comp_progress.height) * _val1000 / 1000)), y1 - 1, round - 1, comp_progress.cont);
+	bitmap_fillroundrect(_x0 + 1, _y0 + 1, (_x0 + comp_progress.height - 1 + ((_width - comp_progress.height) * _val1000 / 1000)), y1 - 1, round - 1, comp_progress.cont);
 }
 
 void stm32uikit_rectProgress(uint16_t _x0, uint16_t _y0, uint16_t _width, uint16_t _val1000){
@@ -92,7 +92,6 @@ void stm32uikit_roundButton(Coordinate_t _touch, uint16_t _x0, uint16_t _y0, uin
 	bitmap_roundrect(_x0, _y0, _x0 + _width, _y0 + comp_button.height, 8, 1, comp_button.out);
 	bitmap_fillroundrect(_x0 + 1, _y0 + 1, _x0 + _width - 1, _y0 + comp_button.height - 1, 7, comp_inside);
 
-
 	if((TOUCH_Z_MIN > _touch.z) || (_touch.x < _x0) || (_touch.x > (_x0 + _width)) || (_touch.y < _y0) || (_touch.y > (_y0 + comp_button.height))){
 		*_val = ((*_val) == 1) ? (2) : (0);
 		return;
@@ -117,7 +116,6 @@ void stm32uikit_switch(Coordinate_t _touch, uint16_t _x0, uint16_t _y0, uint8_t 
 
 	bitmap_fillroundrect(_x0, _y0, _x0 + width, _y0 + comp_switch.height, round, comp_inside);
 	bitmap_fillcircle(pin_x, _y0 + round, round - 2, 0, comp_switch.cont);
-
 
 	if((TOUCH_Z_MIN > _touch.z) || (_touch.x < _x0) || (_touch.x > (_x0 + width)) || (_touch.y < _y0) || (_touch.y > (_y0 + comp_switch.height))){
 		switch(*_val){
