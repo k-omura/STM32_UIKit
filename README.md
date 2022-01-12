@@ -13,7 +13,7 @@ A lightweight kit that uses a screen and touch panel with STM32.
 - UIKit that integrates the above
 
 ## Structure  
-![fig1](https://user-images.githubusercontent.com/26690530/149136535-c9275ca7-2374-4cc0-8c42-c816c71884f4.png)
+![structure](https://user-images.githubusercontent.com/26690530/149136722-b78f821b-959c-45d4-a238-acdd53963ac4.png)
 
 
 ## Development environment
