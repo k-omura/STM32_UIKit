@@ -1,4 +1,4 @@
-## STM32_UIKit
+## STM32_UIKit & TrueType renderer  
 A lightweight kit that uses a screen and touch panel with STM32.
 
 ## Contents
@@ -13,7 +13,8 @@ A lightweight kit that uses a screen and touch panel with STM32.
 - UIKit that integrates the above
 
 ## Structure  
-![structure](https://user-images.githubusercontent.com/26690530/145682494-142c3140-f60f-4d90-a24d-2adb29e8b893.png)
+![fig1](https://user-images.githubusercontent.com/26690530/149136535-c9275ca7-2374-4cc0-8c42-c816c71884f4.png)
+
 
 ## Development environment
 - [STM32F407VET6 Black](https://stm32-base.org/boards/STM32F407VET6-STM32-F4VE-V2.0)
