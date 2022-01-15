@@ -45,7 +45,7 @@ If the value1000 changes, the return value = 1 (otherwise 0).
 ![fig7](https://user-images.githubusercontent.com/26690530/149614646-81487eb7-7633-4655-8701-57bb8466bde8.png)
 
 #### Input structure of a component with input  
-Touched point
+Touched point.  
 ```
 typedef struct {
    uint16_t x;
@@ -53,6 +53,7 @@ typedef struct {
    uint16_t z;
 } Coordinate_t;
 ```
+If there is no z-axis information, increase the z value to more than 300 when touching.  
 
 ## Development environment
 - [STM32F407VET6 Black](https://stm32-base.org/boards/STM32F407VET6-STM32-F4VE-V2.0)
