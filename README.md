@@ -1,5 +1,6 @@
 ## STM32_UIKit & TrueType renderer  
-A lightweight kit that uses a screen and touch panel with STM32.
+A lightweight kit that uses a screen and touch panel with STM32.  
+Manipulate the 8bit/1pixel frame buffer.  
 
 ## Contents
 - Display ILI9341 conotrol(FSMC)
