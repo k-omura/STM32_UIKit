@@ -56,4 +56,4 @@ If there is no z-axis information, increase the z value to more than 300 when to
 
 ## Development environment
 - [STM32F407VET6 Black](https://stm32-base.org/boards/STM32F407VET6-STM32-F4VE-V2.0)
-- ILI9341 FSMC Display with touch panel for STM32F407VET6 Black. [for example this](https://ebay.us/9OyquX)
+- ILI9341 FSMC Display with touch panel for STM32F407VET6 Black. [for example this](https://www.ebay.com/itm/322979958874)
