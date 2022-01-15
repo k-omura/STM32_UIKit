@@ -31,7 +31,7 @@ A lightweight kit that uses a screen and touch panel with STM32.
 ![fig4](https://user-images.githubusercontent.com/26690530/149614531-82f94cef-75b9-4a07-99c2-e5914dd12fd0.png)
 
 ### Slide Bar  
-`uint8_t stm32uikit_sllideBar(Coordinate_t touch, uint16_t x0, uint16_t y0, uint16_t width, uint16_t *val1000)`
+`uint8_t stm32uikit_sllideBar(Coordinate_t touch, uint16_t x0, uint16_t y0, uint16_t width, uint16_t *val1000)`  
 If the value1000 changes, the return value = 1 (otherwise 0).
 ![fig5](https://user-images.githubusercontent.com/26690530/149614569-66519ddd-27da-4bae-a5ca-64e6a31ea8ed.png)
 
