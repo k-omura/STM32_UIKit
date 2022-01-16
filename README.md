@@ -13,12 +13,15 @@ Manipulate the 8bit/1pixel frame buffer.
     - TrueType (Porting [my Arduino library](https://github.com/k-omura/truetype_Arduino))
 - UIKit that integrates the above
 
+## Demos
+- [STM32_UIkit](https://youtu.be/HiLC_AcfrQw)  
+- [TrueType](https://youtu.be/KPYnb5hfLiA)  
+
 ## Structure  
 ![structure](https://user-images.githubusercontent.com/26690530/149136722-b78f821b-959c-45d4-a238-acdd53963ac4.png)
 
 ## STM32_UIKit Quick start  
 The following is the basic idea. See [example](https://github.com/k-omura/STM32_UIKit/tree/main/examples/STM32F407VET6/STM32_UIkit) for full code.  
-[Demo](https://youtu.be/HiLC_AcfrQw)  
 ```
 #include <FSMC_ILI9341.h>
 #include <bitmap.h>
@@ -96,7 +99,6 @@ If there is no z-axis information, increase the z value to more than 300 when to
 
 ## TrueType Quick start  
 The following is the basic idea. See [example](https://github.com/k-omura/STM32_UIKit/tree/main/examples/STM32F407VET6/truetype) for full code.  
-[Demo](https://youtu.be/KPYnb5hfLiA)  
 ```
 #include <FSMC_ILI9341.h>
 #include <bitmap.h>
