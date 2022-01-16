@@ -16,6 +16,45 @@ Manipulate the 8bit/1pixel frame buffer.
 ## Structure  
 ![structure](https://user-images.githubusercontent.com/26690530/149136722-b78f821b-959c-45d4-a238-acdd53963ac4.png)
 
+## STM32_UIKit Sample  
+The following is the basic idea. See [example](https://github.com/k-omura/STM32_UIKit/tree/main/examples/STM32F407VET6/STM32_UIkit) for full code.  
+```
+#include <FSMC_ILI9341.h>
+#include <bitmap.h>
+#include <touch_2046.h>
+#include <stm32uikit.h>
+
+#define COLOR_BACKGROUND 0x00
+
+uint8_t frameBuffer[ILI9341_PIXEL_COUNT] = {0};
+
+int main(void){
+  //touch panel init
+  Coordinate_t touch_s3uikit;
+
+  //display init
+  ILI9341_init();
+  ILI9341_setRotation(1);
+
+  //bitmap init
+  char string[30];
+  bitmap_setparam(DISPLAY_WIDTH, DISPLAY_HEIGHT, COLOR_BACKGROUND, frameBuffer); //Set framebuffer size, background color, framebuffer pointer
+  bitmap_clear();
+
+  //loop
+  while (1) {
+    //get touched point
+    touch_s3uikit = xpt2046_read(&hspi2, touch_cal);
+
+    //set components. for example,,,
+    stm32uikit_sllideBar(touch_s3uikit, 10, 100, 190, &slide_val);
+
+    ILI9341_printBitmap(frameBuffer); //flush framebuffer to display
+    bitmap_clear(); //clear bitmap
+  }
+}
+```
+
 ## STM32_UIKit Components  
 ### Progress Bar   
 `void stm32uikit_rectProgress(uint16_t x0, uint16_t y0, uint16_t width, uint16_t val1000)`
@@ -37,7 +76,7 @@ Manipulate the 8bit/1pixel frame buffer.
 
 ### Button  
 `void stm32uikit_roundButton(Coordinate_t touch, uint16_t x0, uint16_t y0, uint16_t width, uint8_t *val)`
-![fig6](https://user-images.githubusercontent.com/26690530/149614597-0a0ec7d4-7f33-4fef-a5b8-0b72003b6fce.png)
+![fig6](https://user-images.githubusercontent.com/26690530/149648569-fff986e2-02de-40b8-8fa9-3389936388a4.png)
 
 ### Switch  
 `void stm32uikit_switch(Coordinate_t touch, uint16_t x0, uint16_t y0, uint8_t *val)`
