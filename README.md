@@ -163,7 +163,10 @@ int main(void){
 ```
 
 ## Known issues  
-- It may stop suddenly while drawing TrueType. Probably related to memory leaks.  
+- Nothing now.  
+
+## Notes  
+- Set "SDIOCLK Clock divide factor" appropriately. If the clock is too fast, it will fail to access SD and stop working.  
 
 ## Development environment
 - [STM32F407VET6 Black](https://stm32-base.org/boards/STM32F407VET6-STM32-F4VE-V2.0)
