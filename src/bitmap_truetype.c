@@ -7,7 +7,149 @@
 
 #include "bitmap_truetype.h"
 
-//----------
+//private define
+#define FLAG_ONCURVE (1 << 0)
+#define FLAG_XSHORT (1 << 1)
+#define FLAG_YSHORT (1 << 2)
+#define FLAG_REPEAT (1 << 3)
+#define FLAG_XSAME (1 << 4)
+#define FLAG_YSAME (1 << 5)
+//private define end
+
+//private struct typedef
+struct bitmap_truetype_param_t{
+	uint16_t characterSize;
+	uint8_t kerningOn;
+	int16_t characterSpace;
+	int16_t start_x;
+	int16_t end_x;
+	int16_t end_y;
+	uint16_t displayWidth;
+	uint16_t displayHeight;
+	uint16_t displayWidthFrame;
+	uint8_t stringRotation;
+	uint8_t colorLine;
+	uint8_t colorInside;
+	uint8_t fillInside;
+};
+
+typedef struct {
+	char name[5];
+	uint32_t checkSum;
+	uint32_t offset;
+	uint32_t length;
+} ttTable_t;
+
+typedef struct {
+	uint32_t version;
+	uint32_t revision;
+	uint32_t checkSumAdjustment;
+	uint32_t magicNumber;
+	uint16_t flags;
+	uint16_t unitsPerEm;
+	char     created[8];
+	char     modified[8];
+	int16_t  xMin;
+	int16_t  yMin;
+	int16_t  xMax;
+	int16_t  yMax;
+	uint16_t macStyle;
+	uint16_t lowestRecPPEM;
+	int16_t fontDirectionHint;
+	int16_t indexToLocFormat;
+	int16_t glyphDataFormat;
+} ttHeadttTable_t;
+
+typedef struct {
+	uint8_t flag;
+	int16_t x;
+	int16_t y;
+} ttPoint_t;
+
+typedef struct {
+	int16_t numberOfContours;
+	int16_t xMin;
+	int16_t yMin;
+	int16_t xMax;
+	int16_t yMax;
+	uint16_t *endPtsOfContours;
+	uint16_t numberOfPoints;
+	ttPoint_t *points;
+} ttGlyph_t;
+
+typedef struct {
+	int16_t dx;
+	int16_t dy;
+	uint8_t enableScale;
+	uint16_t scale_x;
+	uint16_t scale_y;
+} ttGlyphTransformation_t;
+
+/* currently only support format4 cmap tables */
+typedef struct {
+	uint16_t version;
+	uint16_t numberSubtables;
+} ttCmapIndex_t;
+
+typedef struct {
+	uint16_t platformId;
+	uint16_t platformSpecificId;
+	uint16_t offset;
+} ttCmapEncoding_t;
+
+typedef struct {
+	uint16_t format;
+	uint16_t length;
+	uint16_t language;
+	uint16_t segCountX2;
+	uint16_t searchRange;
+	uint16_t entrySelector;
+	uint16_t rangeShift;
+	uint32_t offset;
+	uint32_t endCodeOffset;
+	uint32_t startCodeOffset;
+	uint32_t idDeltaOffset;
+	uint32_t idRangeOffsetOffset;
+	uint32_t glyphIndexArrayOffset;
+} ttCmapFormat4_t;
+
+/* currently only support format0 kerning tables */
+typedef struct {
+	uint32_t version; //The version number of the kerning table (0x00010000 for the current version).
+	uint32_t nTables; //The number of subtables included in the kerning table.
+} ttKernHeader_t;
+
+typedef struct {
+	uint32_t length; //The length of this subtable in bytes, including this header.
+	uint16_t coverage; //Circumstances under which this table is used. See below for description.
+} ttKernSubtable_t;
+
+typedef struct {
+	uint16_t nPairs; //The number of kerning pairs in this subtable.
+	uint16_t searchRange; //The largest power of two less than or equal to the value of nPairs, multiplied by the size in bytes of an entry in the subtable.
+	uint16_t entrySelector; //This is calculated as log2 of the largest power of two less than or equal to the value of nPairs. This value indicates how many iterations of the search loop have to be made. For example, in a list of eight items, there would be three iterations of the loop.
+	uint16_t rangeShift; //The value of nPairs minus the largest power of two less than or equal to nPairs. This is multiplied by the size in bytes of an entry in the table.
+} ttKernFormat0_t;
+
+typedef struct {
+	int16_t x;
+	int16_t y;
+} ttCoordinate_t;
+
+typedef struct {
+	uint16_t advanceWidth;
+	int16_t leftSideBearing;
+} ttHMetric_t;
+
+typedef struct {
+	uint16_t p1;
+	uint16_t p2;
+	uint8_t up;
+} ttWindIntersect_t;
+//private struct typedef end
+
+
+//private variable
 uint32_t bytesread;
 const int numTablesPos = 4;
 const int tablePos = 12;
@@ -43,10 +185,7 @@ ttWindIntersect_t *pointsToFill;
 
 struct bitmap_truetype_fs_t bitmap_truetype_fs;
 struct bitmap_truetype_param_t bitmap_truetype_param = {20, 1, 0, 10, 280, 320, 280, 320, 280, 0, 0x00, 0xff};
-
-//private struct typedef
-
-//private struct typedef end
+//private variable end
 
 //private function prototype
 //Assuming "private"
@@ -84,14 +223,14 @@ int16_t getKerning(uint16_t, uint16_t);
 void generateOutline(int32_t, int32_t, uint16_t);
 void freePointsAll();
 int16_t isInside(uint16_t, uint16_t);
-void fillGlyph(uint16_t, uint16_t, uint16_t);
+uint8_t fillGlyph(uint16_t, uint16_t, uint16_t);
 uint8_t readGlyph(uint16_t, uint8_t);
 void freeGlyph();
-void addPoint(uint16_t, uint16_t);
+uint8_t addPoint(uint16_t, uint16_t);
 void freePoints();
-void addBeginPoint(uint16_t);
+uint8_t addBeginPoint(uint16_t);
 void freeBeginPoints();
-void addEndPoint(uint16_t);
+uint8_t addEndPoint(uint16_t);
 void freeEndPoints();
 void addLine(uint16_t, uint16_t, uint16_t, uint16_t);
 int32_t isLeft(ttCoordinate_t *_p0, ttCoordinate_t *_p1, ttCoordinate_t *_point);
@@ -172,6 +311,7 @@ void truetype_textDraw(int32_t _x, int32_t _y, char _character[]){
 		wcharacter[i] = _character[i];
 	}
 	truetype_textDrawL(_x, _y, wcharacter);
+	free(wcharacter);
 }
 
 void truetype_textDrawL(int32_t _x, int32_t _y, wchar_t _character[]){
@@ -317,7 +457,9 @@ uint16_t truetype_getStringWidth(char _character[]){
 	for(uint16_t i = 0; i < length; i++){
 		wcharacter[i] = _character[i];
 	}
-	return truetype_getStringWidthL(wcharacter);
+	uint16_t output = truetype_getStringWidthL(wcharacter);
+	free(wcharacter);
+	return output;
 }
 
 uint32_t calculateCheckSum(uint32_t _offset, uint32_t _length){
@@ -559,7 +701,7 @@ void generateOutline(int32_t _x, int32_t _y, uint16_t _width){
 	numBeginPoints = 0;
 	numEndPoints = 0;
 
-	int16_t x0, y0, x1, y1;
+	int32_t x0, y0, x1, y1;
 
 	uint16_t j = 0;
 
@@ -625,9 +767,11 @@ void generateOutline(int32_t _x, int32_t _y, uint16_t _width){
 					x0 = pointsOfCurve[0].x;
 					y0 = pointsOfCurve[0].y;
 
-					for (double t = 0; t <= 1; t += 0.2) {
-						x1 = (int16_t)((1 - t) * (1 - t) * (1 - t) * pointsOfCurve[0].x + 3 * (1 - t) * (1 - t) * t * pointsOfCurve[1].x + 3 * (1 - t) * t * t * pointsOfCurve[2].x + t * t * t * pointsOfCurve[3].x);
-						y1 = (int16_t)((1 - t) * (1 - t) * (1 - t) * pointsOfCurve[0].y + 3 * (1 - t) * (1 - t) * t * pointsOfCurve[1].y + 3 * (1 - t) * t * t * pointsOfCurve[2].y + t * t * t * pointsOfCurve[3].y);
+					for (uint8_t t = 0; t <= 10; t += 2) {
+						x1 = (int32_t)((10 - t) * (10 - t) * (10 - t) * pointsOfCurve[0].x + 3 * (10 - t) * (10 - t) * t * pointsOfCurve[1].x + 3 * (10 - t) * t * t * pointsOfCurve[2].x + t * t * t * pointsOfCurve[3].x);
+						y1 = (int32_t)((10 - t) * (10 - t) * (10 - t) * pointsOfCurve[0].y + 3 * (10 - t) * (10 - t) * t * pointsOfCurve[1].y + 3 * (10 - t) * t * t * pointsOfCurve[2].y + t * t * t * pointsOfCurve[3].y);
+						x1 /= 1000;
+						y1 /= 1000;
 
 						addLine(map(x0, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
 								map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
@@ -641,9 +785,11 @@ void generateOutline(int32_t _x, int32_t _y, uint16_t _width){
 					x0 = pointsOfCurve[0].x;
 					y0 = pointsOfCurve[0].y;
 
-					for (double t = 0; t <= 1; t += 0.2) {
-						x1 = (int16_t)((1 - t) * (1 - t) * pointsOfCurve[0].x + 2 * t * (1 - t) * pointsOfCurve[1].x + t * t * pointsOfCurve[2].x);
-						y1 = (int16_t)((1 - t) * (1 - t) * pointsOfCurve[0].y + 2 * t * (1 - t) * pointsOfCurve[1].y + t * t * pointsOfCurve[2].y);
+					for (uint8_t t = 0; t <= 10; t += 2) {
+						x1 = (int32_t)((10 - t) * (10 - t) * pointsOfCurve[0].x + 2 * t * (10 - t) * pointsOfCurve[1].x + t * t * pointsOfCurve[2].x);
+						y1 = (int32_t)((10 - t) * (10 - t) * pointsOfCurve[0].y + 2 * t * (10 - t) * pointsOfCurve[1].y + t * t * pointsOfCurve[2].y);
+						x1 /= 100;
+						y1 /= 100;
 
 						addLine(map(x0, glyph.xMin, glyph.xMax, _x, _x + _width - 1),
 								map(y0, yMin, yMax, _y + bitmap_truetype_param.characterSize - 1, _y),
@@ -715,7 +861,7 @@ int16_t isInside(uint16_t _x, uint16_t _y){
 	return windingNumber;
 }
 
-void fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
+uint8_t fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
 	for(uint16_t y = _y_min; y < (_y_min + bitmap_truetype_param.characterSize); y++){
 		ttCoordinate_t point1, point2;
 		ttCoordinate_t point;
@@ -742,7 +888,12 @@ void fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
 				if (point2.y > y) {
 					//Have a valid up intersect
 					intersectPointsNum++;
-					pointsToFill = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					ttWindIntersect_t *tmp = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					if(tmp == NULL){
+						free(pointsToFill);
+						return 0;
+					}
+					pointsToFill = tmp;
 					pointsToFill[intersectPointsNum - 1].p1 = i;
 					pointsToFill[intersectPointsNum - 1].p2 = p2Num;
 					pointsToFill[intersectPointsNum - 1].up = 1;
@@ -752,7 +903,12 @@ void fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
 				if (point2.y <= y) {
 					//Have a valid down intersect
 					intersectPointsNum++;
-					pointsToFill = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					ttWindIntersect_t *tmp = (ttWindIntersect_t *)realloc(pointsToFill, sizeof(ttWindIntersect_t) * intersectPointsNum);
+					if(tmp == NULL){
+						free(pointsToFill);
+						return 0;
+					}
+					pointsToFill = tmp;
 					pointsToFill[intersectPointsNum - 1].p1 = i;
 					pointsToFill[intersectPointsNum - 1].p2 = p2Num;
 					pointsToFill[intersectPointsNum - 1].up = 0;
@@ -788,6 +944,7 @@ void fillGlyph(uint16_t _x_min, uint16_t _y_min, uint16_t _width){
 		free(pointsToFill);
 		pointsToFill = NULL;
 	}
+	return 1;
 }
 
 uint8_t readGlyph(uint16_t _code, uint8_t _justSize){
@@ -873,7 +1030,7 @@ uint16_t codeToGlyphId(uint16_t _code){
 		}
 	}
 	if (!found) {
-	return 0;
+		return 0;
 	}
 	return glyphId;
 }
@@ -894,7 +1051,13 @@ uint8_t readSimpleGlyph(uint8_t _addGlyph){
 	}
 
 	if(_addGlyph){
-		glyph.endPtsOfContours = (uint16_t *)realloc(glyph.endPtsOfContours, (sizeof(uint16_t) * glyph.numberOfContours));
+		uint16_t *tmp;
+		tmp = (uint16_t *)realloc(glyph.endPtsOfContours, (sizeof(uint16_t) * glyph.numberOfContours));
+		if(tmp == NULL){
+			free(glyph.endPtsOfContours);
+			return 0;
+		}
+		glyph.endPtsOfContours = tmp;
 	}else{
 		glyph.endPtsOfContours = (uint16_t *)malloc((sizeof(uint16_t) * glyph.numberOfContours));
 	}
@@ -913,7 +1076,13 @@ uint8_t readSimpleGlyph(uint8_t _addGlyph){
 	glyph.numberOfPoints++;
 
 	if(_addGlyph){
-		glyph.points = (ttPoint_t *)realloc(glyph.points, sizeof(ttPoint_t) * (glyph.numberOfPoints + glyph.numberOfContours));
+		ttPoint_t *tmp;
+		tmp = (ttPoint_t *)realloc(glyph.points, sizeof(ttPoint_t) * (glyph.numberOfPoints + glyph.numberOfContours));
+		if(tmp == NULL){
+			free(glyph.points);
+			return 0;
+		}
+		glyph.points = tmp;
 	}else{
 		glyph.points = (ttPoint_t *)malloc(sizeof(ttPoint_t) * (glyph.numberOfPoints + glyph.numberOfContours));
 	}
@@ -1009,31 +1178,52 @@ void freeGlyph(){
 	free(glyph.endPtsOfContours);
 	glyph.numberOfPoints = 0;
 }
-void addPoint(uint16_t _x, uint16_t _y){
+uint8_t addPoint(uint16_t _x, uint16_t _y){
 	numPoints++;
-	points = (ttCoordinate_t *)realloc(points, sizeof(ttCoordinate_t) * numPoints);
+	ttCoordinate_t *tmp;
+	tmp = (ttCoordinate_t *)realloc(points, sizeof(ttCoordinate_t) * numPoints);
+	if(tmp == NULL){
+		free(points);
+		return 0;
+	}
+	points = tmp;
 	points[(numPoints - 1)].x = _x;
 	points[(numPoints - 1)].y = _y;
+	return 1;
 }
 void freePoints(){
 	free(points);
 	points = NULL;
 	numPoints = 0;
 }
-void addBeginPoint(uint16_t _bp){
+uint8_t addBeginPoint(uint16_t _bp){
 	numBeginPoints++;
-	beginPoints = (uint16_t *)realloc(beginPoints, sizeof(uint16_t) * numBeginPoints);
+	uint16_t *tmp;
+	tmp = (uint16_t *)realloc(beginPoints, sizeof(uint16_t) * numBeginPoints);
+	if(tmp == NULL){
+		free(beginPoints);
+		return 0;
+	}
+	beginPoints = tmp;
 	beginPoints[(numBeginPoints - 1)] = _bp;
+	return 1;
 }
 void freeBeginPoints(){
 	free(beginPoints);
 	beginPoints = NULL;
 	numBeginPoints = 0;
 }
-void addEndPoint(uint16_t _ep){
+uint8_t addEndPoint(uint16_t _ep){
 	numEndPoints++;
-	endPoints = (uint16_t *)realloc(endPoints, sizeof(uint16_t) * numEndPoints);
+	uint16_t *tmp;
+	tmp = (uint16_t *)realloc(endPoints, sizeof(uint16_t) * numEndPoints);
+	if(tmp == NULL){
+		free(endPoints);
+		return 0;
+	}
+	endPoints = tmp;
 	endPoints[(numEndPoints - 1)] = _ep;
+	return 1;
 }
 void freeEndPoints(){
 	free(endPoints);
