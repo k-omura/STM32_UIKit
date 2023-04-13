@@ -70,21 +70,25 @@ int main(void){
 `void stm32uikit_analogMeter(uint16_t x0, uint16_t y0, uint16_t val1000)`
 ![fig3](https://user-images.githubusercontent.com/26690530/149614503-be96e9c1-db25-4a47-80f4-dc3c8686e9a5.png)
 
+### Circle Meter  
+`void stm32uikit_circleMeter(uint16_t x0, uint16_t y0, uint16_t val1000, uint16_t thickness)`
+![fig4](https://user-images.githubusercontent.com/26690530/231768426-46fd6487-e749-4b4f-af33-4a5843ae4e47.png)
+
 ### Status  
 `void stm32uikit_status(uint16_t x0, uint16_t y0, uint16_t status)`
-![fig4](https://user-images.githubusercontent.com/26690530/149614531-82f94cef-75b9-4a07-99c2-e5914dd12fd0.png)
+![fig5](https://user-images.githubusercontent.com/26690530/149614531-82f94cef-75b9-4a07-99c2-e5914dd12fd0.png)
 
 ### Slide Bar  
 `void stm32uikit_sllideBar(Coordinate_t touch, uint16_t x0, uint16_t y0, uint16_t width, uint16_t *val1000)`  
-![fig5](https://user-images.githubusercontent.com/26690530/149614569-66519ddd-27da-4bae-a5ca-64e6a31ea8ed.png)
+![fig6](https://user-images.githubusercontent.com/26690530/149614569-66519ddd-27da-4bae-a5ca-64e6a31ea8ed.png)
 
 ### Button  
 `void stm32uikit_roundButton(Coordinate_t touch, uint16_t x0, uint16_t y0, uint16_t width, uint8_t *val)`
-![fig6](https://user-images.githubusercontent.com/26690530/149648569-fff986e2-02de-40b8-8fa9-3389936388a4.png)
+![fig7](https://user-images.githubusercontent.com/26690530/149648569-fff986e2-02de-40b8-8fa9-3389936388a4.png)
 
 ### Switch  
 `void stm32uikit_switch(Coordinate_t touch, uint16_t x0, uint16_t y0, uint8_t *val)`
-![fig7](https://user-images.githubusercontent.com/26690530/149614646-81487eb7-7633-4655-8701-57bb8466bde8.png)
+![fig8](https://user-images.githubusercontent.com/26690530/149614646-81487eb7-7633-4655-8701-57bb8466bde8.png)
 
 #### Input structure of a component with input  
 Touched point.  
